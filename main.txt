@@ -1,0 +1,239 @@
+/*
+ * BME 464 - Lab B
+ *
+ * Run a real-time clock and display the time on the LCD
+ * Template: Nick Bottenus - 9/3/12
+ * Student: Michael Deng, Ruth Godbey, Mitchel Zhang
+ * 
+ */
+
+
+#include "Lcd.h"
+#include <delays.h>
+#include <p18f46k22.h>
+
+#pragma config FOSC = INTIO67   // Internal OSC block, Port Function on RA6/7
+#pragma config WDTEN = OFF      // Watch Dog Timer disabled. SWDTEN no effect
+#pragma config XINST = OFF      // Instruction set Extension and indexed Addressing mode disabled
+
+//Define statements
+#define One_Sec  0x80 	//Load high byte of timer 1 with this for 1 second
+// Timer 1 clock source is crystal oscillator on T1OS1/T1OS0, 1:1,
+// Dedicated enabled, Do Not Synch, Enable Timer1
+#define Timer1  0x89
+
+//Variable definitions
+unsigned char Sec; //Variables for keeping time
+unsigned char Min;
+unsigned char Hour;
+unsigned char state;
+
+//Function definitions
+void RTC_ISR(void);
+void SysInit(void);
+void High_Priority_ISR(void);
+
+//To be written by the student
+void RTCIncSec(void);
+void RTCIncMin(void);
+void RTCIncHour(void);
+void WriteTime(void);
+unsigned char isLeftBtnPressed(void);
+unsigned char isRightBtnPressed(void);
+
+//High priority interrupt
+#pragma code InterruptVectorHigh = 0x08
+void InterruptVectorHigh (void)
+{
+  _asm
+    goto High_Priority_ISR
+  _endasm
+}
+
+#pragma interrupt High_Priority_ISR
+void High_Priority_ISR(void) 
+{
+    RTC_ISR(); //Call real-time clock service routine
+}
+
+void main(void)
+{
+    //Initialize
+    SysInit();
+    LCDClear();
+    state = 0;
+    //Loop (except while servicing interrupts)
+    while(1)
+    {
+		WriteTime();             // Show on LCD
+		
+		//Check for button presses, etc
+        if (state==0) {
+            LCDGoto(0,1);
+            LCDWriteStr("Press RA4 to Set.");
+            if (isLeftBtnPressed()==1) {
+                state = 1;
+                Sec = 0;
+                LCDClear();
+                WriteTime();
+            }
+        }
+        
+        if (state==1){
+            LCDGoto(0,1);
+            LCDWriteStr("Set hours.");
+            if (isLeftBtnPressed()==1) {
+                state = 2;
+                LCDClear();
+                WriteTime();
+            }
+            if (isRightBtnPressed()==1) {
+                RTCIncHour();
+            }
+        }
+        
+        if (state==2){
+            LCDGoto(0,1);
+            LCDWriteStr("Set minutes.");
+            if (isLeftBtnPressed()==1) {
+                state = 0;
+                LCDClear();
+                WriteTime();
+            }
+            if (isRightBtnPressed()==1) {
+                RTCIncMin();
+            }
+        }
+                
+            
+		Delay10KTCYx(10);           // Delay 1/10 second
+    };
+}
+
+//Initialize necessary systems
+void SysInit(void)
+{
+    OSCCON=0b01010110; //4 MHz internal oscillator
+
+    //Set up buttons
+    ANSELBbits.ANSB0=0; //Digital
+    TRISAbits.RA4=1; //Input
+    TRISBbits.RB0=1; //Input
+
+    //Set up LCD
+    ANSELD = 0x00;
+    TRISD = 0x00; //Digital out
+
+    LCDInit(); //Start LCD
+    LCDWriteStr("Starting clock...");
+    
+    //Set up timer
+    TMR1H  = One_Sec;
+    TMR1L  = 0;
+    T1CON  = Timer1;		// Configure Timer 1
+    T1GCON = 0;                 // Timer 1 Gate function disabled
+    RCONbits.IPEN=1;            // Allow interrupt priorities
+    PIR1bits.TMR1IF = 0;        // Clear any pending Timer 1 Interrupt indication
+    PIE1bits.TMR1IE = 1;        // Enable Timer 1 Interrupt
+    INTCONbits.GIE=1;           // Enable interrupts
+
+    //Reset variables
+    Hour  = 0;
+    Min   = 0;
+    Sec   = 0;
+}
+
+//Called every second by the interrupt
+void RTC_ISR (void)
+{
+    if (PIR1bits.TMR1IF)            // If timer overflowed
+    {
+        TMR1H  |= One_Sec;          // Reset timer to one second
+        RTCIncSec();                // Increment count
+        PIR1bits.TMR1IF = 0;        // Clear timer flag
+        INTCONbits.INT0IF = 0;      // Clear interrupt flag
+    }
+}
+
+//***********************
+//BME 464 Students: Edit subroutines below here BEFORE class
+//***********************
+
+//Increment Sec variable, correctly roll over Sec, Min and Hour
+void RTCIncSec(void)
+{
+    if (state==0) {
+        Sec++;
+        if(Sec==60)
+        {
+            Sec=0;
+            RTCIncMin();
+        }
+    }
+}
+
+//Increment Min variable, correctly roll over Min and Hour
+void RTCIncMin(void)
+{
+    Min++;
+    if(Min==60)
+    {
+        Min=0;
+        RTCIncHour();
+    }
+}
+
+//Increment Hour variable, correctly roll over Hour
+void RTCIncHour(void)
+{
+    Hour++;
+    if(Hour==24)
+        Hour=0;
+}
+
+//Display time on LCD as HH:MM:SS at row and column 0
+//The hour is in variable Hour
+//The minute is in variable Min
+//The second is in variable Sec
+void WriteTime(void)
+{
+    LCDGoto(0,0);
+    LCDPutByte(Hour);
+    LCDPutChar(':');
+    LCDPutByte(Min);
+    LCDPutChar(':');
+    LCDPutByte(Sec);
+}
+
+//***********************
+//BME 464 Students: Edit subroutines below here DURING class
+//***********************
+
+//Return 1 if RA4 button has been pressed, 0 otherwise
+//
+//Be sure to include some form of debouncing
+//
+//The button is accessed using PORTAbits.RA4, a 0 means the button is pressed
+unsigned char isLeftBtnPressed(void)
+{
+    unsigned char i = 0;
+    while (PORTAbits.RA4==0)
+        i++;
+    
+    return (i>5)?1:0;
+}
+
+//Return 1 if RB0 button has been pressed, 0 otherwise
+//
+//Be sure to include some form of debouncing
+//
+//
+//The button is accessed using PORTBbits.RB0, a 0 means the button is pressed
+unsigned char isRightBtnPressed(void)
+{
+    unsigned char i = 0;
+    while (PORTBbits.RB0==0)
+        i++;
+    
+    return (i>5)?1:0;
+}
