@@ -80,10 +80,13 @@ void SysInit(void)
 {
     OSCCON=0b01010110; //4 MHz internal oscillator
 
-    //Set up buttons
+    //Set up buttons (B as interruptible input)
     ANSELBbits.ANSB0=0; //Digital
     TRISAbits.RA4=1; //Input
     TRISBbits.RB0=1; //Input
+    INT0E = 1;
+    INTCON2bits.INTEDG0 = 1; //Interrupt on rising edge of RB0/
+
 
     //Set up LCD
     ANSELD = 0x00;
@@ -99,7 +102,7 @@ void SysInit(void)
     RCONbits.IPEN=1;            // Allow interrupt priorities
     PIR1bits.TMR1IF = 0;        // Clear any pending Timer 1 Interrupt indication
     PIE1bits.TMR1IE = 1;        // Enable Timer 1 Interrupt
-    INTCONbits.GIE=1;           // Enable interrupts
+    
 
     //Set up A/D on AN0
     ANSELAbits.ANSA0 = 1; // set bit 0 an channel A as analog
@@ -125,6 +128,9 @@ void SysInit(void)
     Sec = 0;
     Hour = 0;
     Min = 0;
+
+	INTCONbits.PEIE = 1 // Enable peripheral interrupts
+	INTCONbits.GIE=1;   // Enable global interrupts
 }
 
 // High priority interrupt processing
@@ -142,15 +148,16 @@ void RTC_ISR (void)
         TMR1L  = T1L;
         
     }
-	
-
-	if (PIR1bits.SSP1IF) {			// SSP1 read
+	else if (PIR1bits.SSP1IF) {			// SSP1 read
 		if (SSP1STAT.BF) 			// if SSP1 buffer full
+			readSSP1();
 		// Do some stuff
 		PIR1bits.TMR1IF = 0;        // Clear timer flag
-        INTCONbits.INT0IF = 0;      // Clear interrupt flag
-
-				
+        INTCONbits.INT0IF = 0;      // Clear interrupt flag	
+	}
+	else {					// RB0 button press
+		ECGState = -ECGState+1;		// Flip ECG state
+		INTCONbits.INT0IF = 0;      // Clear interrupt flag
 	}
 }
 
@@ -191,6 +198,10 @@ void readAVin(void) {
 void writeVolt(void) {
     LCDPutByte((volt&0xF0)>>4);
     LCDPutByte((volt&0x0F));
+}
+
+void writeState(void) {
+	LCDWriteStr(sprintf("ECG state is: %i",ECGState));
 }
 
 void readSSP1(void) {
