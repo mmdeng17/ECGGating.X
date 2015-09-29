@@ -1,0 +1,121 @@
+//
+// Code Outline
+// 
+// Written by: Michael Deng
+
+
+// EEPROM
+QRSWaveform;			// array containing QRS peak for autocorrelation
+
+
+// Data structures
+DataQueue;				// Queue to store ECG measurements
+PeakQueue;				// Queue to store peak timings
+
+
+// State variables
+ECGOn = false;			// whether or not device is in ECG mode
+TriggerOn = false;		// whether or not device is in Trigger mode
+SettingsOn = false;		// whether or not device is in Settings mode
+isTriggering = false;	// whether or not device is currently triggering
+
+
+void main(void) {
+	SystemInit();
+
+	while (1) {
+		// Wait for interrupts!
+	}
+
+
+}
+
+
+
+// ---------- Interrupt Service Routines ----------
+
+void ECGOnInterrupt(void) {
+	ECGOn = !ECGOn;
+}
+
+void TriggerOnInterrupt(void) {
+	if (ECGOn)
+		TriggerOn = !TriggerOn;
+}
+
+void SettingsOnInterrupt(void) {
+	SettingsOn = !SettingsOn;
+	ECGOn = false;
+	TriggerOn = false;
+}
+
+void Timer0Interrupt(void) {
+	if (ECGOn) { 								// In ECG Only Mode
+		acquireData();
+		
+		if (TriggerOn && !isTriggering) { 		// In ECG and Trigger Mode
+			if (checkQRS) {
+				addQRS();						
+				time = getQTDelay();
+
+				isTriggering = true;
+				beginTimer1(time);
+			}
+		}
+	}	
+}
+
+void Timer1Interrupt(void) {
+	fireTrigger();
+}
+
+
+
+// ---------- Data acquisition/manipulation functions ----------
+
+// Function to read data from chip and place in DataQueue 
+void acquireData(void) { 
+
+// Implementation not shown
+
+}
+
+
+// Function to check if QRS peak in DataQueue
+boolean checkQRS(void) {
+
+// Implementation not shown
+
+}
+
+
+// Function to add peak timing to PeakQueue
+void addQRS(void) {
+
+// Implementation not shown
+
+}
+
+
+// Funciton to get delay time for image trigger
+int getQTDelay(void) {
+
+// Implementation not shown
+
+}
+
+
+// Function to begin trigger timer based on QT delay
+void beginTimer1(time) {
+
+// Implementation not shown
+
+}
+
+
+// Function to fire imaging trigger
+void fireTrigger(void) {
+
+// Implementation not shown
+
+}
