@@ -28,5 +28,8 @@ void writeTime(unsigned int row, unsigned int Tick);
 
 void DACVolt(unsigned int volt);
 
+void writeSSP(unsigned int row, unsigned int data);
+
+
 #endif	/* OUTFCNS_H */
 

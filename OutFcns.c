@@ -37,3 +37,15 @@ void writeTime(unsigned int row, unsigned int Tick)
 void DACVolt(unsigned int volt) {
     VREFCON2bits.DACR = volt>>5;
 }
+
+void writeSSP(unsigned int row, unsigned int data)
+{
+    LCDGoto(0,row);
+    sprintf(dispStr,"%06d", data);
+    LCDPutChar(dispStr[0]);
+    LCDPutChar(dispStr[1]);
+    LCDPutChar(dispStr[2]);
+    LCDPutChar(dispStr[3]);
+    LCDPutChar(dispStr[4]);
+    LCDPutChar(dispStr[5]);
+}

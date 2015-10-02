@@ -45,17 +45,17 @@ OBJECTDIR=build/${CND_CONF}/${IMAGE_TYPE}
 DISTDIR=dist/${CND_CONF}/${IMAGE_TYPE}
 
 # Source Files Quoted if spaced
-SOURCEFILES_QUOTED_IF_SPACED=Lcd.c main.c
+SOURCEFILES_QUOTED_IF_SPACED=Lcd.c main.c Fcns.c OutFcns.c
 
 # Object Files Quoted if spaced
-OBJECTFILES_QUOTED_IF_SPACED=${OBJECTDIR}/Lcd.o ${OBJECTDIR}/main.o
-POSSIBLE_DEPFILES=${OBJECTDIR}/Lcd.o.d ${OBJECTDIR}/main.o.d
+OBJECTFILES_QUOTED_IF_SPACED=${OBJECTDIR}/Lcd.o ${OBJECTDIR}/main.o ${OBJECTDIR}/Fcns.o ${OBJECTDIR}/OutFcns.o
+POSSIBLE_DEPFILES=${OBJECTDIR}/Lcd.o.d ${OBJECTDIR}/main.o.d ${OBJECTDIR}/Fcns.o.d ${OBJECTDIR}/OutFcns.o.d
 
 # Object Files
-OBJECTFILES=${OBJECTDIR}/Lcd.o ${OBJECTDIR}/main.o
+OBJECTFILES=${OBJECTDIR}/Lcd.o ${OBJECTDIR}/main.o ${OBJECTDIR}/Fcns.o ${OBJECTDIR}/OutFcns.o
 
 # Source Files
-SOURCEFILES=Lcd.c main.c
+SOURCEFILES=Lcd.c main.c Fcns.c OutFcns.c
 
 
 CFLAGS=
@@ -105,6 +105,22 @@ ${OBJECTDIR}/main.o: main.c  nbproject/Makefile-${CND_CONF}.mk
 	@${DEP_GEN} -d ${OBJECTDIR}/main.o 
 	@${FIXDEPS} "${OBJECTDIR}/main.o.d" $(SILENT) -rsi ${MP_CC_DIR}../ -c18 
 	
+${OBJECTDIR}/Fcns.o: Fcns.c  nbproject/Makefile-${CND_CONF}.mk
+	@${MKDIR} "${OBJECTDIR}" 
+	@${RM} ${OBJECTDIR}/Fcns.o.d 
+	@${RM} ${OBJECTDIR}/Fcns.o 
+	${MP_CC} $(MP_EXTRA_CC_PRE) -D__DEBUG -D__MPLAB_DEBUGGER_PK3=1 -p$(MP_PROCESSOR_OPTION) -ms -oa-  -I ${MP_CC_DIR}\\..\\h  -fo ${OBJECTDIR}/Fcns.o   Fcns.c 
+	@${DEP_GEN} -d ${OBJECTDIR}/Fcns.o 
+	@${FIXDEPS} "${OBJECTDIR}/Fcns.o.d" $(SILENT) -rsi ${MP_CC_DIR}../ -c18 
+	
+${OBJECTDIR}/OutFcns.o: OutFcns.c  nbproject/Makefile-${CND_CONF}.mk
+	@${MKDIR} "${OBJECTDIR}" 
+	@${RM} ${OBJECTDIR}/OutFcns.o.d 
+	@${RM} ${OBJECTDIR}/OutFcns.o 
+	${MP_CC} $(MP_EXTRA_CC_PRE) -D__DEBUG -D__MPLAB_DEBUGGER_PK3=1 -p$(MP_PROCESSOR_OPTION) -ms -oa-  -I ${MP_CC_DIR}\\..\\h  -fo ${OBJECTDIR}/OutFcns.o   OutFcns.c 
+	@${DEP_GEN} -d ${OBJECTDIR}/OutFcns.o 
+	@${FIXDEPS} "${OBJECTDIR}/OutFcns.o.d" $(SILENT) -rsi ${MP_CC_DIR}../ -c18 
+	
 else
 ${OBJECTDIR}/Lcd.o: Lcd.c  nbproject/Makefile-${CND_CONF}.mk
 	@${MKDIR} "${OBJECTDIR}" 
@@ -121,6 +137,22 @@ ${OBJECTDIR}/main.o: main.c  nbproject/Makefile-${CND_CONF}.mk
 	${MP_CC} $(MP_EXTRA_CC_PRE) -p$(MP_PROCESSOR_OPTION) -ms -oa-  -I ${MP_CC_DIR}\\..\\h  -fo ${OBJECTDIR}/main.o   main.c 
 	@${DEP_GEN} -d ${OBJECTDIR}/main.o 
 	@${FIXDEPS} "${OBJECTDIR}/main.o.d" $(SILENT) -rsi ${MP_CC_DIR}../ -c18 
+	
+${OBJECTDIR}/Fcns.o: Fcns.c  nbproject/Makefile-${CND_CONF}.mk
+	@${MKDIR} "${OBJECTDIR}" 
+	@${RM} ${OBJECTDIR}/Fcns.o.d 
+	@${RM} ${OBJECTDIR}/Fcns.o 
+	${MP_CC} $(MP_EXTRA_CC_PRE) -p$(MP_PROCESSOR_OPTION) -ms -oa-  -I ${MP_CC_DIR}\\..\\h  -fo ${OBJECTDIR}/Fcns.o   Fcns.c 
+	@${DEP_GEN} -d ${OBJECTDIR}/Fcns.o 
+	@${FIXDEPS} "${OBJECTDIR}/Fcns.o.d" $(SILENT) -rsi ${MP_CC_DIR}../ -c18 
+	
+${OBJECTDIR}/OutFcns.o: OutFcns.c  nbproject/Makefile-${CND_CONF}.mk
+	@${MKDIR} "${OBJECTDIR}" 
+	@${RM} ${OBJECTDIR}/OutFcns.o.d 
+	@${RM} ${OBJECTDIR}/OutFcns.o 
+	${MP_CC} $(MP_EXTRA_CC_PRE) -p$(MP_PROCESSOR_OPTION) -ms -oa-  -I ${MP_CC_DIR}\\..\\h  -fo ${OBJECTDIR}/OutFcns.o   OutFcns.c 
+	@${DEP_GEN} -d ${OBJECTDIR}/OutFcns.o 
+	@${FIXDEPS} "${OBJECTDIR}/OutFcns.o.d" $(SILENT) -rsi ${MP_CC_DIR}../ -c18 
 	
 endif
 

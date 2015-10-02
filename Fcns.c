@@ -1,6 +1,7 @@
 #include <p18f46k22.h>
 
-unsigned int volt = 0;
+unsigned char data;
+unsigned char volt;
 
 unsigned int readAVin(void) {
     ADCON0bits.GO=1; // Start conversion
@@ -14,4 +15,14 @@ unsigned int readAVin(void) {
         volt=1022;
     
     return volt;
+}
+
+unsigned int readSSP1(void) {
+    PORTAbits.NOT_SS = 1; // do not select
+
+    //while ( !SSPSTATbits.BF );
+    
+	data = SSP1BUF;
+    
+    return data;
 }

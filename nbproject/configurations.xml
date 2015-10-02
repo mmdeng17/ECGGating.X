@@ -6,6 +6,8 @@
                    projectFiles="true">
       <itemPath>General.h</itemPath>
       <itemPath>Lcd.h</itemPath>
+      <itemPath>Fcns.h</itemPath>
+      <itemPath>OutFcns.h</itemPath>
     </logicalFolder>
     <logicalFolder name="LinkerScript"
                    displayName="Linker Files"
@@ -16,11 +18,12 @@
                    projectFiles="true">
       <itemPath>Lcd.c</itemPath>
       <itemPath>main.c</itemPath>
+      <itemPath>Fcns.c</itemPath>
+      <itemPath>OutFcns.c</itemPath>
     </logicalFolder>
     <logicalFolder name="ExternalFiles"
                    displayName="Important Files"
                    projectFiles="false">
-      <itemPath>Makefile</itemPath>
     </logicalFolder>
   </logicalFolder>
   <sourceRootList>
@@ -109,6 +112,7 @@
         <property key="ToolFirmwareFilePath"
                   value="Press to browse for a specific firmware version"/>
         <property key="ToolFirmwareOption.UseLatestFirmware" value="true"/>
+        <property key="firmware.download.all" value="false"/>
         <property key="hwtoolclock.frcindebug" value="false"/>
         <property key="memories.aux" value="false"/>
         <property key="memories.bootflash" value="true"/>

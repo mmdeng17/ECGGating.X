@@ -4,10 +4,13 @@
  */
 
 #include "Lcd.h"
+#include "Fcns.h"
+#include "OutFcns.h"
 #include <delays.h>
 #include <p18f46k22.h>
 #include <stdlib.h>
 #include <stdio.h>
+
 
 #pragma config FOSC = INTIO7   // Internal OSC block, CLKOUT RA6/7
 #pragma config PLLCFG = ON      // enable 4x pll
@@ -20,28 +23,19 @@
 				    // 0xFFFF-0x8000 = 512 * (0xFFFF-0xFFBF)
 
 //Variable definitions
-char dispStr[15];
-char dispTick[15];
-char dispVolt[15];
-unsigned int Tick;
+unsigned int Tick = 0;
+unsigned int currData = 0;
 unsigned char count;
 unsigned char curr;
 unsigned char ECGState = 0;
 unsigned char GateState = 0;
-unsigned int volt = 0;
+unsigned int currVolt = 0;
 
 //Function definitions
 void RTC_ISR(void);
 void SysInit(void);
 void High_Priority_ISR(void);
-void RTCIncSec(void);
-void RTCIncMin(void);
-void RTCIncHour(void);
-void writeTime(void);
-void readAVin(void);
-void writeVolt(void);
-void readSSP1(void);
-void writeState(void);
+
 
 //High priority interrupt
 #pragma code InterruptVectorHigh = 0x08
@@ -67,10 +61,10 @@ void main(void)
 
     while(1)
     {   
-        writeState();
-        writeVolt();
+        writeSSP(0,currData);
+        writeState(1,ECGState);
         
-        Delay10KTCYx(100);
+        Delay10KTCYx(250);
     };
 }
 
@@ -101,7 +95,7 @@ void SysInit(void)
     //Set up A/D on AN0
     ANSELAbits.ANSA0 = 1; // set bit 0 an channel A as analog
     TRISAbits.RA0 = 1; // Analog in
-    ADCON2bits.ACQT=001; //Set acq time to 2 TAD
+    ADCON2bits.ACQT=110; //Set acq time to 16 TAD (for 16MHz)
     ADCON2bits.ADCS=010; // Set conversion clock FOSC/32
     ADCON2bits.ADFM=1; //Format result to right justified
     ADCON0bits.ADON=1; // Turn on A/D
@@ -109,7 +103,6 @@ void SysInit(void)
     
     // Set up analog output on FVR
     ANSELAbits.ANSA2 = 1;
-    //TRISAbits.TRISA2 = 0;
     VREFCON1bits.DACEN = 1;
     VREFCON1bits.DACOE = 1;
     
@@ -121,9 +114,19 @@ void SysInit(void)
     LATEbits.LATE1 = 1;	  // latch value of output on port E bit 1 to 1
     
 	// Set up MSSP1
+    TRISAbits.TRISA5 = 1;
+    ANSELAbits.ANSA5 = 0; // set up SS1
+    PORTAbits.NOT_SS = 1; // do not select
+    TRISCbits.TRISC3 = 0;
+    ANSELCbits.ANSC3 = 0; // set up sck1 output
+    TRISCbits.TRISC4 = 1;
+    ANSELCbits.ANSC4 = 0; // set up sdi input
+    TRISCbits.TRISC5 = 0;
+    ANSELCbits.ANSC5 = 0; // set up sdo output
+    
 	PIR1bits.SSP1IF = 0; // Clear SSP1 interrupt
 	PIE1bits.SSP1IE = 0;	 // Enable SSP1 interrupts
-	SSP1CON1bits.SSPM = 0x2; //Set SSP1 mode to master w/ FOSC/64
+	SSP1CON1bits.SSPM = 0x0; //Set SSP1 mode to master w/ FOSC/4
 	SSP1CON1bits.SSPEN = 1; // Enable serial port
 	
     // Set up RB0 interrupt as high priority interrupt
@@ -145,8 +148,10 @@ void RTC_ISR (void)
 {
     if (PIR1bits.TMR1IF) {          // If timer overflowed
         PIR1bits.TMR1IF = 0;        // Clear timer flag
-
-		readAVin();
+        
+        currData = readSSP1();
+		//currVolt = readAVin();
+        //DACVolt(currVolt);
         Tick++;
         
         LATEbits.LATE1 = !LATEbits.LATE1;
@@ -164,59 +169,4 @@ void RTC_ISR (void)
 		INTCONbits.INT0IF = 0;      // Clear interrupt flag
         LATEbits.LATE1 = !LATEbits.LATE1;
 	}
-}
-
-void readAVin(void) {
-    ADCON0bits.GO=1; // Start conversion
-    while(ADCON0bits.GO==1){}; // Wait for finish
-							   // look into possibility of doing this with interrupts
-			// can do using PIR1bits.ADIF
-			// and PIE1bits.ADIE
-    volt= ADRESH; // get high byte of voltage
-    volt= (volt<<8) | ADRESL; // combine with low byte of voltage
-    if(volt==1023) //Fix roundoff error
-        volt=1022;
-    
-    VREFCON2bits.DACR = volt>>5;
-}
-
-void writeVolt(void) {
-    LCDGoto(0,1);
-	count = 15;
-//	while (volt!=0) {
-//		LCDGoto(0,count);
-//		LCDPutByte(volt%10);
-//		volt = volt/10;
-//		count--;
-//	}
-    sprintf(dispVolt,"%04d",volt*49/10); //Approximate conversion to 0-5V
-    LCDPutChar(dispVolt[0]);
-    LCDPutChar('.');
-    LCDPutChar(dispVolt[1]);
-    LCDPutChar(dispVolt[2]);
-    LCDPutChar(dispVolt[3]);
-    LCDPutChar('V');
-
-    //LCDPutByte((volt&0xF0)>>4);
-    //LCDPutByte((volt&0x0F));
-}
-
-void writeState(void) {
-    LCDGoto(0,0);
-    LCDWriteStr("ECG state is: ");
-	LCDGoto(0,13);
-    LCDPutByte(ECGState);
-}
-
-void readSSP1(void) {
-	unsigned char data;
-	data = SSP1BUF;
-}
-
-void writeTime(void)
-{
-    LCDGoto(0,0);
-    sprintf(dispTick,"%d", Tick);
-    dispTick[15] = '\0';
-    LCDWriteStr(dispTick);
 }
