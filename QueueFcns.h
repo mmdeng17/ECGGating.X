@@ -19,17 +19,16 @@ extern "C" {
 #include <stdio.h>
 
 typedef struct Queue {
-        int capacity;
-        int size;
-        int front;
-        int rear;
-        int *elements;
-}Queue;
+	int data[QUEUE_SIZE];
+	int front = 0;
+	int rear = -1;
+	int elementsNumber = 0;
+}
 
-Queue * createQueue(int maxElements);
-void Dequeue(Queue *Q);
-int front(Queue *Q)
-void Enqueue(Queue *Q,int element)
+boolean isFull();
+boolean isEmpty();
+void enqueue(char c);
+char dequeue();
 
 
 #endif	/* QUEUEFCNS_H */
