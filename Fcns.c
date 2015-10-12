@@ -24,3 +24,6 @@ unsigned int readSSP1(void) {
 	//unsigned int data = SSP1BUF;
     return SSP1BUF;
 }
+
+unsigned int imTrigger(unsigned int delay) {
+}

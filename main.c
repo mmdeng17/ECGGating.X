@@ -17,7 +17,7 @@
 #pragma config XINST = OFF      // Instruction set Extension and indexed Addressing mode disabled
 
 //Define statements
-#define T1H  0xF0   // Timer is 0xFFBF for 512Hz
+#define T1H  0x80   // Timer is 0xFFBF for 512Hz
 #define T1L  0x00	// 0x8000 for 1s 
 				    // 0xFFFF-0x8000 = 512 * (0xFFFF-0xFFBF)
 #define QUEUE_SIZE 10
@@ -30,7 +30,11 @@ unsigned char count;
 unsigned char curr;
 unsigned char ECGState = 0;
 unsigned char GateState = 0;
+unsigned char ImFlag = 0;
 unsigned int currVolt = 0;
+unsigned int currQTDelay = 100;
+unsigned int currImDelay = 100;
+unsigned int currImLength = 50;
 
 // Queue definitions
 float dataQueue[QUEUE_SIZE+3];
@@ -67,12 +71,10 @@ void main(void)
     while(1)
     {   
         count++;
-        writeTime(0,peek(dataQueue));
-        writeTime(1,isQRS(derivQueue,500.0));
-//        writeSSP(0,currData);
-//        writeState(1,ECGState);
+        writeTime(0,peek(peakQueue));
+        writeTime(1,getSize(peakQueue));
         
-        Delay10KTCYx(25);
+        Delay10KTCYx(10);
     };
 }
 
@@ -119,7 +121,7 @@ void SysInit(void)
     
 	// Set up output
     TRISEbits.TRISE1 = 0; // Set bit 1 on port E to output
-    LATEbits.LATE1 = 1;	  // latch value of output on port E bit 1 to 1
+    LATEbits.LATE1 = 0;	  // latch value of output on port E bit 1 to 1
     
 	// Set up MSSP1
     TRISAbits.TRISA5 = 1;
@@ -168,12 +170,41 @@ void RTC_ISR (void)
         
         //currData = readSSP1();
 		currVolt = readAVin();
+        DACVolt(currVolt);
         enqueue(dataQueue,currVolt);
-        enqueue(derivQueue,currVolt*currVolt);
-        //DACVolt(currVolt);
+        enqueue(derivQueue,getDeriv(dataQueue,dataQueue[QUEUE_SIZE+1]));
+        
+        if (isQRS(derivQueue,1000.0)) 
+            enqueue(peakQueue,Tick);
+        
+//        if (ImFlag!=1) {
+//            if (isEmpty(peakQueue)) {
+//                if (isQRS(derivQueue,1000.0)) {
+//                    enqueue(peakQueue,Tick);
+//                    currQTDelay = getQTDelay(peakQueue);
+//                    ImFlag = 1;
+//                }
+//            }
+//            else if ((Tick-peek(peakQueue))>currQTDelay) {
+//                if (isQRS(derivQueue,1000.0)) {
+//                    enqueue(peakQueue,Tick);
+//                    currQTDelay = getQTDelay(peakQueue);
+//                    ImFlag = 1;
+//                }
+//            }
+//        }
+//
+//        if (ImFlag==1 && (Tick-peek(peakQueue))<(currImDelay+currImLength))
+//            LATEbits.LATE1 = 1;
+//        else {
+//            ImFlag = 0;
+//            LATEbits.LATE1 = 0;
+//        }
+        
+        
         Tick++;
         
-        LATEbits.LATE1 = !LATEbits.LATE1;
+        //LATEbits.LATE1 = !LATEbits.LATE1;
         TMR1H  = T1H;
         TMR1L  = T1L;
     }

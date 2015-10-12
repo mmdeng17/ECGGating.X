@@ -3,6 +3,7 @@
 #define QUEUE_SIZE 10
 
 float outVal;
+float currD;
 int front;
 int rear;
 int c;
@@ -68,18 +69,36 @@ float getAvg (float *data) {
     return outVal;
 }
 
+float getDeriv(float *data,int rear) {
+    if (getSize(data)<5)
+        return 0;
+    else {
+        currD = 0.25*data[(rear+QUEUE_SIZE)%10];
+        currD += 0.125*data[(rear+QUEUE_SIZE-1)%10];
+        currD -= 0.125*data[(rear+QUEUE_SIZE-3)%10];
+        currD -= 0.25*data[(rear+QUEUE_SIZE-3)%10];
+        currD = currD*currD;
+        return currD;
+    }
+}
+
 unsigned char isQRS(float *data, float thresh) {
     if (isFull(data)!=1)
         return 0;
     else {
-        front = (int) data[QUEUE_SIZE];
+        rear = (int) data[QUEUE_SIZE];
         c = 0;
-        while(c<data[QUEUE_SIZE+2]) {
-            if (data[front]>=thresh)
+        while(c<(data[QUEUE_SIZE+2]-4)) {
+            if (data[rear]>=thresh)
                 return 1;
-            front = (front+1)%QUEUE_SIZE;
+            rear = (rear-1+QUEUE_SIZE)%QUEUE_SIZE;
             c++;
         }
         return 0;
     }
 }
+
+unsigned int getQTDelay(float *data) {
+    return 100;
+}
+

@@ -16,6 +16,9 @@ float peek(float *data);
 
 unsigned int getSize(float *data);
 float getAvg(float *data);
+
+float getDeriv(float *data, int rear);
 unsigned char isQRS(float *data, float thresh);
+unsigned int getQTDelay(float *data);
 
 #endif	/* QUEUEFCNS_H */
