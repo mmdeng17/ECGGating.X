@@ -6,11 +6,10 @@
 #include "Lcd.h"
 #include "Fcns.h"
 #include "OutFcns.h"
+#include "QueueFcns.h"
 #include <delays.h>
 #include <p18f46k22.h>
-#include <stdlib.h>
 #include <stdio.h>
-
 
 #pragma config FOSC = INTIO7   // Internal OSC block, CLKOUT RA6/7
 #pragma config PLLCFG = ON      // enable 4x pll
@@ -21,8 +20,9 @@
 #define T1H  0xF0   // Timer is 0xFFBF for 512Hz
 #define T1L  0x00	// 0x8000 for 1s 
 				    // 0xFFFF-0x8000 = 512 * (0xFFFF-0xFFBF)
+#define QUEUE_SIZE 25
 
-//Variable definitions
+// Variable definitions
 unsigned int Tick = 0;
 unsigned int currData = 0;
 unsigned char count;
@@ -31,11 +31,14 @@ unsigned char ECGState = 0;
 unsigned char GateState = 0;
 unsigned int currVolt = 0;
 
-//Function definitions
+// Queue definitions
+double dataQueue[QUEUE_SIZE+2];
+double derivQueue[QUEUE_SIZE+2];
+
+// Function definitions
 void RTC_ISR(void);
 void SysInit(void);
 void High_Priority_ISR(void);
-
 
 //High priority interrupt
 #pragma code InterruptVectorHigh = 0x08
@@ -58,11 +61,14 @@ void main(void)
     SysInit();
     LCDClear();
 
-
+    
     while(1)
     {   
-        writeSSP(0,currData);
-        writeState(1,ECGState);
+        count++;
+        writeTime(0,derivQueue[0]);
+        writeTime(1,getAvg(derivQueue));
+//        writeSSP(0,currData);
+//        writeState(1,ECGState);
         
         Delay10KTCYx(250);
     };
@@ -137,7 +143,17 @@ void SysInit(void)
     
 	// Misc
     Tick = 0;
-
+    dataQueue[QUEUE_SIZE] = 0;
+    dataQueue[QUEUE_SIZE+1] = 0;
+    derivQueue[QUEUE_SIZE] = 0;
+    derivQueue[QUEUE_SIZE+1] = 0;
+    enqueue(dataQueue,101);
+    enqueue(derivQueue,65537);
+    enqueue(dataQueue,999);
+    //enqueue(derivQueue,998001);
+    enqueue(dataQueue,400);
+    //enqueue(derivQueue,160000);
+    
 	//INTCONbits.PEIE = 1 // Enable peripheral interrupts
 	INTCONbits.GIE = 1;   // Enable global interrupts
     INTCONbits.PEIE = 1;
@@ -149,7 +165,7 @@ void RTC_ISR (void)
     if (PIR1bits.TMR1IF) {          // If timer overflowed
         PIR1bits.TMR1IF = 0;        // Clear timer flag
         
-        currData = readSSP1();
+        //currData = readSSP1();
 		//currVolt = readAVin();
         //DACVolt(currVolt);
         Tick++;

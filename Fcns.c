@@ -1,9 +1,8 @@
 #include <p18f46k22.h>
 
-unsigned char data;
-unsigned char volt;
-
 unsigned int readAVin(void) {
+    
+    int volt=0;
     ADCON0bits.GO=1; // Start conversion
     while(ADCON0bits.GO==1){}; // Wait for finish
 							   // look into possibility of doing this with interrupts
@@ -22,7 +21,6 @@ unsigned int readSSP1(void) {
 
     //while ( !SSPSTATbits.BF );
     
-	data = SSP1BUF;
-    
-    return data;
+	//unsigned int data = SSP1BUF;
+    return SSP1BUF;
 }

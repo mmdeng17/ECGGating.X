@@ -8,28 +8,15 @@
 #ifndef OUTFCNS_H
 #define	OUTFCNS_H
 
-#ifdef	__cplusplus
-extern "C" {
-#endif
-
-#ifdef	__cplusplus
-}
-#endif
-
 #include <p18f46k22.h>
 #include "Lcd.h"
 #include <stdio.h>
 
 void writeState(unsigned int row, unsigned int ECGState);
-
 void writeVolt(unsigned int row, unsigned int volt);
-
 void writeTime(unsigned int row, unsigned int Tick);
-
 void DACVolt(unsigned int volt);
-
 void writeSSP(unsigned int row, unsigned int data);
-
 
 #endif	/* OUTFCNS_H */
 
