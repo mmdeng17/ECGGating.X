@@ -1,49 +1,68 @@
-#include <stdio.h>
-#include <stdlib.h>
-#define QUEUE_SIZE 500
+// #include <p18f46k22.h>
 
-typedef enum {false, true} boolean;
+#define QUEUE_SIZE 25
 
-typedef struct Queue {
-	int data[QUEUE_SIZE];
-	int front = 0;
-	int rear = -1;
-	int elementsNumber = 0;
+double outVal;
+int front;
+int rear;
+int c;
+int currSize;
+
+unsigned char isFull(double *data) {
+    if ((int) (data[QUEUE_SIZE+1]+1)%QUEUE_SIZE==data[QUEUE_SIZE])
+        return 1;
+    else
+        return 0;
 }
 
-boolean isFull();
-boolean isEmpty();
-void enqueue(char c);
-char dequeue();
-
-boolean isFull() {
-	if(elementsNumber == QUEUE_SIZE) {
-		return true;
-	} 
-	else {
-		return false;
-	}
+unsigned char isEmpty(double *data) {
+    if (data[QUEUE_SIZE]==data[QUEUE_SIZE])
+        return 1;
+    else
+        return 0;
 }
 
-boolean isEmpty() {
-	if(elementsNumber == 0) {
-		printf("Queue is empty!!!\n");
-		return true;
-	} 
-	else {
-		return false;
-	}
+void enqueue(double *data, double newData) {
+    data[(int) data[QUEUE_SIZE+1]] = newData;
+    data[QUEUE_SIZE+1] = (int) (data[QUEUE_SIZE+1]+1)%QUEUE_SIZE;
 }
 
-void enqueue(char c) {
-	rear = ++rear % QUEUE_SIZE;
-	queue[rear] = c;
-	elementsNumber++;
+int dequeue(double *data) {
+    double outVal = data[(int) data[QUEUE_SIZE]];
+    data[QUEUE_SIZE] = (int) (data[QUEUE_SIZE]+1)%QUEUE_SIZE;
+    return outVal;
 }
 
-char dequeue() {
-	char c = queue[front];
-	front = ++front % QUEUE_SIZE;
-	elementsNumber--;
-	return c;
+int peek (double *data) {
+    return (int) data[(int) data[QUEUE_SIZE]];
+}
+
+unsigned int getSize (double *data) {
+    outVal = 0;
+    if (data[QUEUE_SIZE]<=data[QUEUE_SIZE+1])
+        outVal = data[QUEUE_SIZE+1]-data[QUEUE_SIZE];
+    else
+        outVal = QUEUE_SIZE-data[QUEUE_SIZE]+data[QUEUE_SIZE+1];
+    
+    return (int) outVal;
+}
+
+float getAvg (double *data) {
+    currSize = getSize(data);
+    
+    if (currSize==0)
+        return 0;
+    
+    front = (int) data[QUEUE_SIZE];
+    rear = (int) data[QUEUE_SIZE+1];
+    outVal = 0;
+    c = 0;
+    
+    while(front!=rear) {
+        c++;
+        outVal+= data[front];
+        front = (front+1)%QUEUE_SIZE;
+    }
+    
+    return outVal/currSize;
 }

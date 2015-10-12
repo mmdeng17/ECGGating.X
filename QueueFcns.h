@@ -1,35 +1,20 @@
 /* 
- * File:   OutFcns.h
+ * File:   QueueFcns.h
  * Author: BME464
  *
- * Created on October 2, 2015, 10:16 AM
+ * Created on October 12, 2015, 11:08 AM
  */
 
 #ifndef QUEUEFCNS_H
 #define	QUEUEFCNS_H
 
-#ifdef	__cplusplus
-extern "C" {
-#endif
+unsigned char isFull(double *data);
+unsigned char isEmpty(double *data);
+void enqueue(double *data, double newData);
+double dequeue(double *data);
+double peek(double *data);
 
-#ifdef	__cplusplus
-}
-#endif
-
-#include <stdio.h>
-
-typedef struct Queue {
-	int data[QUEUE_SIZE];
-	int front = 0;
-	int rear = -1;
-	int elementsNumber = 0;
-}
-
-boolean isFull();
-boolean isEmpty();
-void enqueue(char c);
-char dequeue();
-
+unsigned int getSize(double *data);
+double getAvg(double *data);
 
 #endif	/* QUEUEFCNS_H */
-
