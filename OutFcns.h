@@ -17,6 +17,7 @@ void writeVolt(unsigned int row, unsigned int volt);
 void writeTime(unsigned int row, unsigned int Tick);
 void DACVolt(unsigned int volt);
 void writeSSP(unsigned int row, unsigned int data);
+void writeFloat(unsigned int row, float data);
 
 #endif	/* OUTFCNS_H */
 

@@ -8,13 +8,14 @@
 #ifndef QUEUEFCNS_H
 #define	QUEUEFCNS_H
 
-unsigned char isFull(double *data);
-unsigned char isEmpty(double *data);
-void enqueue(double *data, double newData);
-double dequeue(double *data);
-double peek(double *data);
+unsigned char isFull(float *data);
+unsigned char isEmpty(float *data);
+void enqueue(float *data, float newData);
+float dequeue(float *data);
+float peek(float *data);
 
-unsigned int getSize(double *data);
-double getAvg(double *data);
+unsigned int getSize(float *data);
+float getAvg(float *data);
+unsigned char isQRS(float *data, float thresh);
 
 #endif	/* QUEUEFCNS_H */

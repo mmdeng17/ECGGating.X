@@ -20,7 +20,8 @@
 #define T1H  0xF0   // Timer is 0xFFBF for 512Hz
 #define T1L  0x00	// 0x8000 for 1s 
 				    // 0xFFFF-0x8000 = 512 * (0xFFFF-0xFFBF)
-#define QUEUE_SIZE 25
+#define QUEUE_SIZE 10
+#define PQUEUE_SIZE 10
 
 // Variable definitions
 unsigned int Tick = 0;
@@ -32,8 +33,9 @@ unsigned char GateState = 0;
 unsigned int currVolt = 0;
 
 // Queue definitions
-double dataQueue[QUEUE_SIZE+2];
-double derivQueue[QUEUE_SIZE+2];
+float dataQueue[QUEUE_SIZE+3];
+float derivQueue[QUEUE_SIZE+3];
+float peakQueue[PQUEUE_SIZE+3];
 
 // Function definitions
 void RTC_ISR(void);
@@ -65,12 +67,12 @@ void main(void)
     while(1)
     {   
         count++;
-        writeTime(0,derivQueue[0]);
-        writeTime(1,getAvg(derivQueue));
+        writeTime(0,peek(dataQueue));
+        writeTime(1,isQRS(derivQueue,500.0));
 //        writeSSP(0,currData);
 //        writeState(1,ECGState);
         
-        Delay10KTCYx(250);
+        Delay10KTCYx(25);
     };
 }
 
@@ -101,7 +103,7 @@ void SysInit(void)
     //Set up A/D on AN0
     ANSELAbits.ANSA0 = 1; // set bit 0 an channel A as analog
     TRISAbits.RA0 = 1; // Analog in
-    ADCON2bits.ACQT=110; //Set acq time to 16 TAD (for 16MHz)
+    ADCON2bits.ACQT=000; //Set acq time to 16 TAD (for 16MHz)
     ADCON2bits.ADCS=010; // Set conversion clock FOSC/32
     ADCON2bits.ADFM=1; //Format result to right justified
     ADCON0bits.ADON=1; // Turn on A/D
@@ -145,14 +147,13 @@ void SysInit(void)
     Tick = 0;
     dataQueue[QUEUE_SIZE] = 0;
     dataQueue[QUEUE_SIZE+1] = 0;
+    dataQueue[QUEUE_SIZE+2] = 0;
     derivQueue[QUEUE_SIZE] = 0;
     derivQueue[QUEUE_SIZE+1] = 0;
-    enqueue(dataQueue,101);
-    enqueue(derivQueue,65537);
-    enqueue(dataQueue,999);
-    //enqueue(derivQueue,998001);
-    enqueue(dataQueue,400);
-    //enqueue(derivQueue,160000);
+    derivQueue[QUEUE_SIZE+2] = 0;
+    peakQueue[PQUEUE_SIZE] = 0;
+    peakQueue[PQUEUE_SIZE+1] = 0;
+    peakQueue[PQUEUE_SIZE+2] = 0;
     
 	//INTCONbits.PEIE = 1 // Enable peripheral interrupts
 	INTCONbits.GIE = 1;   // Enable global interrupts
@@ -166,7 +167,9 @@ void RTC_ISR (void)
         PIR1bits.TMR1IF = 0;        // Clear timer flag
         
         //currData = readSSP1();
-		//currVolt = readAVin();
+		currVolt = readAVin();
+        enqueue(dataQueue,currVolt);
+        enqueue(derivQueue,currVolt*currVolt);
         //DACVolt(currVolt);
         Tick++;
         
