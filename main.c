@@ -32,9 +32,9 @@ unsigned char ECGState = 0;
 unsigned char GateState = 0;
 unsigned char ImFlag = 0;
 unsigned int currVolt = 0;
-unsigned int currQTDelay = 100;
-unsigned int currImDelay = 100;
-unsigned int currImLength = 50;
+unsigned int currQTDelay  = 50;
+unsigned int currImDelay  = 5;
+unsigned int currImLength = 5;
 
 // Queue definitions
 float dataQueue[QUEUE_SIZE+3];
@@ -69,10 +69,9 @@ void main(void)
 
     
     while(1)
-    {   
-        count++;
+    {  
         writeTime(0,peek(peakQueue));
-        writeTime(1,getSize(peakQueue));
+        writeTime(1,peek(derivQueue));
         
         Delay10KTCYx(10);
     };
@@ -174,8 +173,17 @@ void RTC_ISR (void)
         enqueue(dataQueue,currVolt);
         enqueue(derivQueue,getDeriv(dataQueue,dataQueue[QUEUE_SIZE+1]));
         
-        if (isQRS(derivQueue,1000.0)) 
+        if (isQRS(derivQueue,15000.0))  {
             enqueue(peakQueue,Tick);
+            ImFlag = 1;
+        }
+        else
+            ImFlag = 0;
+            
+        if (ImFlag==1)
+            LATEbits.LATE1 = 1;
+        else
+            LATEbits.LATE1 = 0;
         
 //        if (ImFlag!=1) {
 //            if (isEmpty(peakQueue)) {
