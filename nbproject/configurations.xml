@@ -8,6 +8,7 @@
       <itemPath>Lcd.h</itemPath>
       <itemPath>Fcns.h</itemPath>
       <itemPath>OutFcns.h</itemPath>
+      <itemPath>QueueFcns.h</itemPath>
     </logicalFolder>
     <logicalFolder name="LinkerScript"
                    displayName="Linker Files"
@@ -20,6 +21,7 @@
       <itemPath>main.c</itemPath>
       <itemPath>Fcns.c</itemPath>
       <itemPath>OutFcns.c</itemPath>
+      <itemPath>QueueFcns.c</itemPath>
     </logicalFolder>
     <logicalFolder name="ExternalFiles"
                    displayName="Important Files"
