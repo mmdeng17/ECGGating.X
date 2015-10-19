@@ -99,6 +99,6 @@ unsigned char isQRS(float *data, float thresh) {
 }
 
 unsigned int getQTDelay(float *data) {
-    return 100;
+    return 50;
 }
 
