@@ -12,12 +12,13 @@
 #include "Lcd.h"
 #include <stdio.h>
 
-void writeState(unsigned int row, unsigned int ECGState);
+void writeStates(unsigned int row, unsigned int ECGState, unsigned int GateState, unsigned int SettState);
 void writeVolt(unsigned int row, unsigned int volt);
 void writeTime(unsigned int row, unsigned int Tick);
 void DACVolt(unsigned int volt);
 void writeSSP(unsigned int row, unsigned int data);
 void writeFloat(unsigned int row, float data);
+void writeButton(unsigned int row);
 
 #endif	/* OUTFCNS_H */
 

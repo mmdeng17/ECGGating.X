@@ -4,11 +4,22 @@
 
 char dispStr[15];
 
-void writeState(unsigned int row,unsigned int ECGState) {
+void writeStates(unsigned int row, unsigned int ECGState, unsigned int GateState, unsigned int SettState) {
     LCDGoto(0,row);
-    LCDWriteStr("ECG state is: ");
-	LCDGoto(0,13);
-    LCDPutByte(ECGState);
+    if (ECGState==1)
+        LCDWriteStr("1");
+    else
+        LCDWriteStr("0");
+    
+    if (GateState==1)
+        LCDWriteStr("1");
+    else
+        LCDWriteStr("0");
+    
+    if (SettState==1)
+        LCDWriteStr("1");
+    else
+        LCDWriteStr("0");
 }
 
 void writeVolt(unsigned int row, unsigned int volt) {
@@ -71,4 +82,29 @@ void writeFloat(unsigned int row, float data) {
 //    LCDPutChar(dispStr[9]);
 //    LCDPutChar(dispStr[10]);
 //    LCDPutChar(dispStr[11]);
+}
+
+
+void writeButton(unsigned int row, unsigned int Tick)
+{
+    LCDGoto(0,row);
+    if (PORTBbits.RB4)
+        LCDWriteStr("1");
+    else
+        LCDWriteStr("0");
+    
+    if (PORTBbits.RB5)
+        LCDWriteStr("1");
+    else
+        LCDWriteStr("0");
+    
+    if (PORTBbits.RB6)
+        LCDWriteStr("1");
+    else
+        LCDWriteStr("0");
+    
+    if (PORTBbits.RB7)
+        LCDWriteStr("1");
+    else
+        LCDWriteStr("0");
 }

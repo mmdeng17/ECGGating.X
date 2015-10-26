@@ -30,11 +30,11 @@ unsigned char count;
 unsigned char curr;
 unsigned char ECGState = 0;
 unsigned char GateState = 0;
-unsigned char ImFlag = 0;
+unsigned char SettState = 0;
 unsigned int currVolt = 0;
-unsigned int currQTDelay  = 50;
-unsigned int currImDelay  = 5;
-unsigned int currImLength = 10;
+unsigned int currImDelay  = 40;
+unsigned int currImLength = 5;
+unsigned int currImCount = 0;
 
 // Queue definitions
 float dataQueue[QUEUE_SIZE+3];
@@ -66,13 +66,14 @@ void main(void)
 {
     //Initialize
     SysInit();
+    TriggerInit();
     LCDClear();
 
     
     while(1)
     {  
-//        writeTime(0,Tick);
-//        writeTime(1,peek(peakQueue));
+ //       writeTime(0,currImCount);
+//        writeStates(1,ECGState,GateState,SettState);
         
         Delay10KTCYx(10);
     };
@@ -120,6 +121,8 @@ void SysInit(void)
     //TRISAbits.TRISA3 = 1;
     
 	// Set up output
+    TRISEbits.TRISE0 = 0; // Set bit 1 on port E to output
+    LATEbits.LATE0 = 0;	  // latch value of output on port E bit 1 to 1
     TRISEbits.TRISE1 = 0; // Set bit 1 on port E to output
     LATEbits.LATE1 = 0;	  // latch value of output on port E bit 1 to 1
     
@@ -140,22 +143,21 @@ void SysInit(void)
 	SSP1CON1bits.SSPEN = 1; // Enable serial port
 	
     // Set up RB0 interrupt as high priority interrupt
-    TRISBbits.RB0 = 1; //set RB0 as Input
-    INTCONbits.INT0E = 1; //enable Interrupt 0 (RB0 as interrupt)
-    INTCON2bits.INTEDG0 = 0; //cause interrupt at falling edge
-    INTCONbits.INT0F = 0; //reset interrupt flag
+    TRISBbits.RB4 = 1; //set RB0 as Input
+    TRISBbits.RB5 = 1; //set RB0 as Input
+    TRISBbits.RB6 = 1; //set RB0 as Input
+    TRISBbits.RB7 = 1; //set RB0 as Input
+    IOCBbits.IOCB4 = 1;
+    IOCBbits.IOCB5 = 1;
+    IOCBbits.IOCB6 = 1;
+    IOCBbits.IOCB7 = 1;
+    INTCONbits.RBIE = 1;
     
 	// Misc
     Tick = 0;
-    dataQueue[QUEUE_SIZE] = 0;
-    dataQueue[QUEUE_SIZE+1] = 0;
-    dataQueue[QUEUE_SIZE+2] = 0;
-    derivQueue[QUEUE_SIZE] = 0;
-    derivQueue[QUEUE_SIZE+1] = 0;
-    derivQueue[QUEUE_SIZE+2] = 0;
-    peakQueue[PQUEUE_SIZE] = 0;
-    peakQueue[PQUEUE_SIZE+1] = 0;
-    peakQueue[PQUEUE_SIZE+2] = 0;
+    reset(dataQueue);
+    reset(derivQueue);
+    reset(peakQueue);
     
 	//INTCONbits.PEIE = 1 // Enable peripheral interrupts
 	INTCONbits.GIE = 1;   // Enable global interrupts
@@ -163,7 +165,7 @@ void SysInit(void)
 }
 
 void TriggerInit(void) {
-    TMR3H  = 0xFF;
+    TMR3H  = 0x00;
     TMR3L  = 0x00;
     T3CON = 0x49;           // timer 3 is enabled, from system clock
     T3GCON = 0;                 // Timer 3 Gate function disabled
@@ -179,47 +181,17 @@ void RTC_ISR (void)
         
         PIR1bits.TMR1IF = 0;        // Clear timer flag
         
-        //currData = readSSP1();
 		currVolt = readAVin();
-        DACVolt(currVolt);
+        //DACVolt(currVolt);
         enqueue(dataQueue,currVolt);
         enqueue(derivQueue,getDeriv(dataQueue,dataQueue[QUEUE_SIZE+1]));
         
-        if (isQRS(derivQueue,20000.0) && (Tick-(unsigned int)peek(peakQueue))>getQTDelay(peakQueue))  {
+        if (isQRS(derivQueue,5000.0) && (Tick-(unsigned int)peek(peakQueue))>getQTDelay(peakQueue))  {
             if (Tick>0) {
                 enqueue(peakQueue,(float) Tick);
-                ImFlag = 1;
+                currImCount = 0;
             }
-            else
-                ImFlag = 0;
         }
-        else
-            ImFlag = 0;
-           
-        if (ImFlag==1)
-            LATEbits.LATE1 = 1;
-        else
-            LATEbits.LATE1 = 0;
-        
-//        if (isQRS(derivQueue,17500.0) && (Tick-(unsigned int)peek(peakQueue))>getQTDelay(peakQueue))  {
-//            if (Tick>0) {
-//                enqueue(peakQueue,(float) Tick);
-//                TriggerInit();
-//            }
-//        }
-//        if (ImFlag==1)
-//            if ((Tick-(unsigned int)peek(peakQueue))>currImDelay && (Tick-(unsigned int)peek(peakQueue))<(currImDelay+currImLength)) {
-//                LATEbits.LATE1 = 1;
-//            }
-//            else if ((Tick-(unsigned int)peek(peakQueue))<=currImDelay) {
-//                LATEbits.LATE1 = 0;
-//            }
-//            else {
-//                LATEbits.LATE1 = 0;
-//                ImFlag = 0;
-//            }
-//        else
-//            LATEbits.LATE1 = 0;       
         
         Tick++;
         
@@ -228,28 +200,52 @@ void RTC_ISR (void)
         
         INTCONbits.GIE = 1;   // Enable global interrupts
     }
-    else if (PIR2bits.TMR3IF) {
+    
+    if (INTCONbits.RBIF) { 
+        INTCONbits.GIE = 0;
+        
+        LATEbits.LATE1 = !LATEbits.LATE1;
+                
+        if (PORTBbits.RB4) {
+            if (ECGState==1)
+                ECGState = 0;
+            else
+                ECGState = 1;
+        }
+
+        if (PORTBbits.RB5) {
+            if (GateState==1)
+                GateState = 0;
+            else
+                GateState = 1;
+        }
+
+        if (PORTBbits.RB6) {
+            if (SettState==1)
+                SettState = 0;
+            else
+                SettState = 1;
+        }
+
+        INTCONbits.RBIF = 0;
+        
+        INTCONbits.GIE = 1;
+    }
+    
+    if (PIR2bits.TMR3IF) {
         INTCONbits.GIE = 0;   // Enable global interrupts
         
-        LATEbits.LATE1 = 1;
-        Delay10KTCYx(10);
-        LATEbits.LATE1 = 0;
-        TMR3H  = 0xFF;
+        if (currImCount>=currImDelay && currImCount<=(currImDelay+currImLength))
+            LATEbits.LATE0 = 1;
+        else
+            LATEbits.LATE0 = 0;
+        
+        currImCount++;
+        //LATEbits.LATE0 = !LATEbits.LATE0;
+        TMR3H  = 0x00;
         TMR3L  = 0x00;
         PIR2bits.TMR3IF = 0;        // Clear any pending Timer 3 Interrupt indication
-        PIE2bits.TMR3IE = 0;        // Disable Timer 3 Interrupt
     
         INTCONbits.GIE = 1;   // Enable global interrupts
     }
-	else if (PIR1bits.SSP1IF) {			// SSP1 read
-		if (SSP1STATbits.BF) 			// if SSP1 buffer full
-			readSSP1();
-		// Do some stuff
-		PIR1bits.TMR1IF = 0;        // Clear timer flag
-	}
-	else if (INTCONbits.INT0IF) {	// RB0 button press
-		ECGState = ~ECGState&0x01;		// Flip ECG state
-		INTCONbits.INT0IF = 0;      // Clear interrupt flag
-        LATEbits.LATE1 = !LATEbits.LATE1;
-	}
 }

@@ -9,6 +9,16 @@ int rear;
 int c;
 int currSize;
 
+void reset(float *data) {
+    c = 0;
+    
+    while(c<=QUEUE_SIZE+2) {
+        data[c] = 0;
+        c++;
+    }
+}
+
+
 unsigned char isFull(float *data) {
     if ((int) data[QUEUE_SIZE+2]==QUEUE_SIZE)
         return 1;
@@ -23,15 +33,10 @@ unsigned char isEmpty(float *data) {
         return 0;
 }
 
-void enqueue(float *data, float newData) {
-    data[(int) data[QUEUE_SIZE+1]] = newData;
-    data[QUEUE_SIZE+2] = data[QUEUE_SIZE+2]+1;
-    if (data[QUEUE_SIZE+2]>QUEUE_SIZE)
-        data[QUEUE_SIZE+2] = QUEUE_SIZE;
-    data[QUEUE_SIZE+1] = (int) (data[QUEUE_SIZE+1]+1)%QUEUE_SIZE;
-}
-
 float dequeue(float *data) {
+    if( ((int)data[QUEUE_SIZE+2])==0 ) {
+        return 0.0;
+    }
     outVal = data[(int) data[QUEUE_SIZE]];
     data[QUEUE_SIZE+2] = data[QUEUE_SIZE+2]-1;
     if (data[QUEUE_SIZE+2]<0)
@@ -40,8 +45,24 @@ float dequeue(float *data) {
     return outVal;
 }
 
+void enqueue(float *data, float newData) {
+    data[(int) data[QUEUE_SIZE+1]] = newData;
+    data[QUEUE_SIZE+2] = data[QUEUE_SIZE+2]+1;
+    
+    if (data[QUEUE_SIZE+2]>QUEUE_SIZE) {
+        data[QUEUE_SIZE] = ((int) (data[QUEUE_SIZE]+1))%QUEUE_SIZE;
+        data[QUEUE_SIZE+2] = QUEUE_SIZE;
+    }
+    
+    data[QUEUE_SIZE+1] = (int) ((int) (data[QUEUE_SIZE+1]+1))%QUEUE_SIZE;
+}
+
 float peek (float *data) {
     return data[(int) data[QUEUE_SIZE]];
+}
+
+float peekEnd (float *data) {
+    return data[(int) data[QUEUE_SIZE+1]];
 }
 
 unsigned int getSize (float *data) {
@@ -73,10 +94,10 @@ float getDeriv(float *data,int rear) {
     if (getSize(data)<5)
         return 0;
     else {
-        currD = 0.25*data[(rear+QUEUE_SIZE)%10];
-        currD += 0.125*data[(rear+QUEUE_SIZE-1)%10];
-        currD -= 0.125*data[(rear+QUEUE_SIZE-3)%10];
-        currD -= 0.25*data[(rear+QUEUE_SIZE-3)%10];
+        currD = 0.25*data[(rear+QUEUE_SIZE)%QUEUE_SIZE];
+        currD += 0.125*data[(rear+QUEUE_SIZE-1)%QUEUE_SIZE];
+        currD -= 0.125*data[(rear+QUEUE_SIZE-3)%QUEUE_SIZE];
+        currD -= 0.25*data[(rear+QUEUE_SIZE-4)%QUEUE_SIZE];
         currD = currD*currD;
         return currD;
     }
@@ -100,5 +121,12 @@ unsigned char isQRS(float *data, float thresh) {
 
 unsigned int getQTDelay(float *data) {
     return 50;
+}
+
+float getRRInterval(float *data) {
+    currD = data[(rear+QUEUE_SIZE)%QUEUE_SIZE];
+    currD -= data[(rear+QUEUE_SIZE-1)%QUEUE_SIZE];
+    
+    return currD;
 }
 
