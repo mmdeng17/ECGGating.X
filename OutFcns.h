@@ -19,6 +19,8 @@ void DACVolt(unsigned int volt);
 void writeSSP(unsigned int row, unsigned int data);
 void writeFloat(unsigned int row, float data);
 void writeButton(unsigned int row);
+void writeChar(unsigned int row,unsigned char outchar);
+void writeBin(unsigned int row,unsigned char outbin);
 
 #endif	/* OUTFCNS_H */
 

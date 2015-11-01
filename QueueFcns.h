@@ -20,8 +20,8 @@ unsigned int getSize(float *data);
 float getAvg(float *data);
 
 float getDeriv(float *data, int rear);
-unsigned char isQRS(float *data, float thresh);
+unsigned char isQRS(float *data, float thresh, unsigned int rear);
 unsigned int getQTDelay(float *data);
-float getRRInterval(float *data);
+float getRRInterval(float t1, float t2);
 
 #endif	/* QUEUEFCNS_H */

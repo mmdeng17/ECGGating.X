@@ -108,3 +108,20 @@ void writeButton(unsigned int row, unsigned int Tick)
     else
         LCDWriteStr("0");
 }
+
+void writeChar(unsigned int row, unsigned char outchar)
+{
+    LCDGoto(0,row);
+    sprintf(dispStr,"%02d", outchar);
+    LCDPutChar(dispStr[0]);
+    LCDPutChar(dispStr[1]);
+}
+
+void writeBin(unsigned int row, unsigned char outbin)
+{
+    LCDGoto(0,row);
+    if (outbin==1)
+        LCDWriteStr("1");
+    else
+        LCDWriteStr("0");
+}

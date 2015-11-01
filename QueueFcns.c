@@ -91,42 +91,31 @@ float getAvg (float *data) {
 }
 
 float getDeriv(float *data,int rear) {
-    if (getSize(data)<5)
-        return 0;
-    else {
-        currD = 0.25*data[(rear+QUEUE_SIZE)%QUEUE_SIZE];
-        currD += 0.125*data[(rear+QUEUE_SIZE-1)%QUEUE_SIZE];
-        currD -= 0.125*data[(rear+QUEUE_SIZE-3)%QUEUE_SIZE];
-        currD -= 0.25*data[(rear+QUEUE_SIZE-4)%QUEUE_SIZE];
-        currD = currD*currD;
-        return currD;
-    }
+    currD = 0.25*data[(rear+QUEUE_SIZE)%QUEUE_SIZE];
+    currD += 0.125*data[(rear+QUEUE_SIZE-1)%QUEUE_SIZE];
+    currD -= 0.125*data[(rear+QUEUE_SIZE-3)%QUEUE_SIZE];
+    currD -= 0.25*data[(rear+QUEUE_SIZE-4)%QUEUE_SIZE];
+    currD = currD*currD;
+    return currD;
 }
 
-unsigned char isQRS(float *data, float thresh) {
-    if (isFull(data)!=1)
-        return 0;
-    else {
-        rear = (int) data[QUEUE_SIZE];
-        c = 0;
-        while(c<(data[QUEUE_SIZE+2]-4)) {
-            if (data[rear]>=thresh)
-                return 1;
-            rear = (rear-1+QUEUE_SIZE)%QUEUE_SIZE;
-            c++;
-        }
-        return 0;
+unsigned char isQRS(float *data, float thresh, unsigned int rear) {
+    rear = (rear+QUEUE_SIZE-1)%QUEUE_SIZE;
+    c = 0;
+    while(c<QUEUE_SIZE) {
+        if (data[rear]>=thresh)
+            return 1;
+        rear = (rear-1+QUEUE_SIZE)%QUEUE_SIZE;
+        c++;
     }
+    return 0;
 }
 
 unsigned int getQTDelay(float *data) {
     return 50;
 }
 
-float getRRInterval(float *data) {
-    currD = data[(rear+QUEUE_SIZE)%QUEUE_SIZE];
-    currD -= data[(rear+QUEUE_SIZE-1)%QUEUE_SIZE];
-    
-    return currD;
+unsigned int getRRInterval(float t1, float t2) {
+    return t1-t2;
 }
 
