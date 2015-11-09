@@ -12,7 +12,7 @@
 #include <p18f46k22.h>
 #include <stdio.h>
 
-// Config PIC
+// Config
 #pragma config FOSC = INTIO7   // Internal OSC block, CLKOUT RA6/7
 #pragma config PLLCFG = ON      // enable 4x pll
 #pragma config WDTEN = OFF      // Watch Dog Timer disabled. SWDTEN no effect
@@ -35,7 +35,7 @@ unsigned char ECGState = 0;     // State variable for ECG detection
 unsigned char TrigState = 0;    // State variable for image trigger
 unsigned char SettState = 0;    // State variable for controlling settings
 
-unsigned int currQTDelay = 0;       // Delay before detecting another peak
+unsigned int currQTDelay = 100;     // Delay before detecting another peak
 unsigned int currImDelay  = 40;     // Delay before trigger
 unsigned int currImLength = 10;     // Length of trigger
 unsigned int currImCount = 0;       // Current timer count for trigger
@@ -43,6 +43,7 @@ unsigned int currThresh = 5000;     // Threshold for QRS detect
 
 unsigned int currData = 0;      // Assorted temp variables
 unsigned int currVolt = 0;
+
 
 // Queue definitions
 float dataQueue[QUEUE_SIZE];        // Queue to store raw ECG data
@@ -54,12 +55,19 @@ unsigned int peakInd = 0;
 float peakValQueue[QUEUE_SIZE];     // Queue to store deriv vals of last peaks
 unsigned int pVInd = 0;
 
+// Misc functions
+void resetParam();
+void SettingsMode(unsigned int *a1, unsigned int *a2, unsigned int *a3, unsigned int *a4);
+unsigned char isRB6(void);
+unsigned char isRB7(void);
+
 
 // Interrupt functions
 void RTC_ISR(void);
 void SysInit(void);
 void TriggerInit(void);
 void High_Priority_ISR(void);
+
 
 //High priority interrupt
 #pragma code InterruptVectorHigh = 0x08
@@ -207,15 +215,15 @@ void RTC_ISR (void)
                     peakInd = (peakInd+1)%QUEUE_SIZE;
                     
                     // Calculate QT/Im delay using difference between peaks
-//                    currData = getRRInterval(peakQueue,peakInd);
-//                    currQTDelay = 0.75*currData;
-                    currQTDelay = 0.6*(peekQ(peakQueue,peakInd)-prevPeak);
-                    if (currQTDelay<=0)
+                    currData = getRRInterval(peakQueue,peakInd);
+                    currQTDelay = 0.75*currData;
+//                    currQTDelay = 0.75*(peekQ(peakQueue,peakInd)-prevPeak);
+                    if (currQTDelay<=25)
                         currQTDelay = 25;
                     if (currQTDelay>=200)
                         currQTDelay = 200;
                     currImDelay  = 0.38*(peekQ(peakQueue,peakInd)-prevPeak)+6;
-                    if (currImDelay<=0)
+                    if (currImDelay<=20)
                         currImDelay = 20;
                     if (currImDelay>=150)
                         currImDelay = 150;
@@ -225,6 +233,9 @@ void RTC_ISR (void)
                 }
             }
             Tick++;
+            
+            if ((Tick-(unsigned int)peekQ(peakQueue,peakInd))>1500)
+                resetParam();
         }
         
         // Restart timer
@@ -301,4 +312,117 @@ void RTC_ISR (void)
         PIR2bits.TMR3IF = 0;  // Clear timer interrupt flag
         INTCONbits.GIE = 1;   // Enable global interrupts
     }
+}
+
+
+// Function to detect if RB7 (ECGState) is pressed
+unsigned char isRB7(void)
+{
+    unsigned char i = 0;
+    while (PORTBbits.RB7==1) {
+        i++;
+        if (i>3)
+            return 1;
+    }
+    
+    return 0;
+}
+
+// Function to detect if RB6 (TrigState) is pressed
+unsigned char isRB6(void)
+{
+    unsigned char i = 0;
+    while (PORTBbits.RB6==1) {
+        i++;
+        if (i>3)
+            return 1;
+    }
+    
+    return 0;
+}
+
+// Function to allow user to update settings
+//  Press both buttons to advance from quantity to quantity
+//  Press one button to increment value
+//  RB7 (ECGState) - increase
+//  RB6 (TrigSTate) - decrease
+void SettingsMode(unsigned int *a1, unsigned int *a2, unsigned int *a3, unsigned int *a4) {
+    int tmpState = 0;
+    Delay10KTCYx(200);
+    
+    while(1)
+    {   
+        // Display current quantity
+        LCDClear();
+        if (tmpState==0) {
+            LCDGoto(0,0);
+            LCDWriteStr("ECG Threshold:");
+            writeUInt(1,*a1);
+        }
+        else if (tmpState==1) {
+            LCDGoto(0,0);
+            LCDWriteStr("QT Delay:");
+            writeUInt(1,*a2);
+        }
+        else if (tmpState==2) {
+            LCDGoto(0,0);
+            LCDWriteStr("Im. Delay:");
+            writeUInt(1,*a3);
+        }
+        else if (tmpState==3) {
+            LCDGoto(0,0);
+            LCDWriteStr("Im. Length:");
+            writeUInt(1,*a4);
+        }
+        else if (tmpState==4) {
+            LCDClear();
+            break;
+        }
+        
+        // Read button presses to update values
+        if (isRB7()==1 && isRB6()==1) {
+            tmpState = (tmpState+1)%5;
+            Delay10KTCYx(200);
+        }
+        else if (isRB6()==1) {
+            switch (tmpState) {
+                case 0:
+                    if (*a1>1)
+                        *a1 = *a1-2;
+                case 1:
+                    if (*a2>25)
+                        *a2 = *a2-1;
+                case 2:
+                    if (*a3>20)
+                        *a3 = *a3-1;
+                case 3:
+                    if (*a4>0)
+                        *a4 = *a4-1;
+            }
+        }
+        else if (isRB7()==1) {
+            switch (tmpState) {
+                case 0:
+                    *a1 = *a1+2;
+                case 1:
+                    if (*a2<200)
+                        *a2 = *a2+1;
+                case 2:
+                    if (*a3<150)
+                        *a3 = *a3+1;
+                case 3:
+                    *a4 = *a4+1;
+            }       
+        }
+        
+        Delay10KTCYx(25);
+    };
+}
+
+void resetParam() {
+    currQTDelay = 100;     // Delay before detecting another peak
+    currImDelay  = 40;     // Delay before trigger
+    currImLength = 10;     // Length of trigger
+    currImCount = 0;       // Current timer count for trigger
+    currThresh = 5000;     // Threshold for QRS detect
 }
