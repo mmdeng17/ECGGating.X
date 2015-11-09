@@ -76,5 +76,6 @@ float getRRInterval(float *peakData, unsigned int peakInd) {
     tmp -= 0.149*peakData[(peakInd+QUEUE_SIZE-3)%QUEUE_SIZE];
     tmp -= 0.056*peakData[(peakInd+QUEUE_SIZE-4)%QUEUE_SIZE];
     tmp -= 0.031*peakData[(peakInd+QUEUE_SIZE-5)%QUEUE_SIZE];
+    return tmp;
 }
 
