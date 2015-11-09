@@ -9,19 +9,12 @@
 #define	QUEUEFCNS_H
 
 void reset(float *data);
-unsigned char isFull(float *data);
-unsigned char isEmpty(float *data);
-void enqueue(float *data, float newData);
-float dequeue(float *data);
-float peek(float *data);
-float peekEnd(float *data);
-
-unsigned int getSize(float *data);
-float getAvg(float *data);
+float peekQ(float *data,unsigned int ind);
+void enqueueQ(float *data, unsigned int *ind, float newVal);
 
 float getDeriv(float *data, int rear);
 unsigned char isQRS(float *data, float thresh, unsigned int rear);
-unsigned int getQTDelay(float *data);
-float getRRInterval(float t1, float t2);
+float getThresh(float *valData,unsigned int valInd);
+float getRRInterval(float *peakData, unsigned int peakInd);
 
 #endif	/* QUEUEFCNS_H */

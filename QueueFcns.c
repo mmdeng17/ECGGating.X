@@ -9,87 +9,28 @@ int rear;
 int c;
 int currSize;
 
+// Function to reset all data in queue to 0;
 void reset(float *data) {
     c = 0;
-    
-    while(c<=QUEUE_SIZE+2) {
+    while(c<QUEUE_SIZE) {
         data[c] = 0;
         c++;
     }
 }
 
-
-unsigned char isFull(float *data) {
-    if ((int) data[QUEUE_SIZE+2]==QUEUE_SIZE)
-        return 1;
-    else
-        return 0;
+// Function to peek at last value in the queue
+float peekQ(float *data,unsigned int ind) {
+    return data[(ind+QUEUE_SIZE-1)%QUEUE_SIZE];
 }
 
-unsigned char isEmpty(float *data) {
-    if ((int) data[QUEUE_SIZE+2]==0)
-        return 1;
-    else
-        return 0;
+// Function to add value to queue and update queue index
+float enqueueQ(float *data, unsigned int *ind, float newVal) {
+    data[*ind] = newVal;
+    *ind = (*ind+1)*QUEUE_SIZE;
 }
 
-float dequeue(float *data) {
-    if( ((int)data[QUEUE_SIZE+2])==0 ) {
-        return 0.0;
-    }
-    outVal = data[(int) data[QUEUE_SIZE]];
-    data[QUEUE_SIZE+2] = data[QUEUE_SIZE+2]-1;
-    if (data[QUEUE_SIZE+2]<0)
-        data[QUEUE_SIZE+2] = 0;
-    data[QUEUE_SIZE] = (int) (data[QUEUE_SIZE]+1)%QUEUE_SIZE;
-    return outVal;
-}
-
-void enqueue(float *data, float newData) {
-    data[(int) data[QUEUE_SIZE+1]] = newData;
-    data[QUEUE_SIZE+2] = data[QUEUE_SIZE+2]+1;
-    
-    if (data[QUEUE_SIZE+2]>QUEUE_SIZE) {
-        data[QUEUE_SIZE] = ((int) (data[QUEUE_SIZE]+1))%QUEUE_SIZE;
-        data[QUEUE_SIZE+2] = QUEUE_SIZE;
-    }
-    
-    data[QUEUE_SIZE+1] = (int) ((int) (data[QUEUE_SIZE+1]+1))%QUEUE_SIZE;
-}
-
-float peek (float *data) {
-    return data[(int) data[QUEUE_SIZE]];
-}
-
-float peekEnd (float *data) {
-    return data[(int) data[QUEUE_SIZE+1]];
-}
-
-unsigned int getSize (float *data) {
-    return (int) data[QUEUE_SIZE+2];
-}
-
-float getAvg (float *data) {
-    currSize = getSize(data);
-    
-    if (currSize==0)
-        return 0;
-    
-    front = (int) data[QUEUE_SIZE];
-    rear = (int) data[QUEUE_SIZE+1];
-    outVal = 0;
-    c = 0;
-    
-    front = (int) data[QUEUE_SIZE];
-    while(c<data[QUEUE_SIZE+2]) {
-        outVal = ((float) c)/(c+1)*outVal + 1.0/(c+1)*data[front%QUEUE_SIZE];
-        front++;
-        c++;
-    }
-    
-    return outVal;
-}
-
+// Function to calculate deriv^2 in ECG
+//  5-step backward difference
 float getDeriv(float *data,int rear) {
     currD = 0.25*data[(rear+QUEUE_SIZE)%QUEUE_SIZE];
     currD += 0.125*data[(rear+QUEUE_SIZE-1)%QUEUE_SIZE];
@@ -99,6 +40,9 @@ float getDeriv(float *data,int rear) {
     return currD;
 }
 
+// Function to check for QRS peak
+//  checks entire queue for any values greater than threshold
+//  returns 1 if value exists
 unsigned char isQRS(float *data, float thresh, unsigned int rear) {
     rear = (rear+QUEUE_SIZE-1)%QUEUE_SIZE;
     c = 0;
@@ -111,11 +55,26 @@ unsigned char isQRS(float *data, float thresh, unsigned int rear) {
     return 0;
 }
 
-unsigned int getQTDelay(float *data) {
-    return 50;
+// Function to calculate threshold based on last 5 peaks
+//  Gaussian window on last 5 peaks, 75% value
+float getThresh(float *valData,unsigned int valInd) {
+    float tmp = 0;
+    tmp += 0.643*valData[(valInd+QUEUE_SIZE-1)%QUEUE_SIZE];
+    tmp += 0.236*valData[(valInd+QUEUE_SIZE-2)%QUEUE_SIZE];
+    tmp += 0.087*valData[(valInd+QUEUE_SIZE-3)%QUEUE_SIZE];
+    tmp += 0.031*valData[(valInd+QUEUE_SIZE-4)%QUEUE_SIZE];
+    tmp += 0.003*valData[(valInd+QUEUE_SIZE-5)%QUEUE_SIZE];
+    return 0.75*tmp;
 }
 
-unsigned int getRRInterval(float t1, float t2) {
-    return t1-t2;
+// Function to calculate heart rate interval based on last 5 peaks
+//  Gaussian window on last 5 peaks
+float getRRInterval(float *peakData, unsigned int peakInd) {
+    float tmp = 0;
+    tmp += 0.646*peakData[(peakInd+QUEUE_SIZE-1)%QUEUE_SIZE];
+    tmp -= 0.410*peakData[(peakInd+QUEUE_SIZE-2)%QUEUE_SIZE];
+    tmp -= 0.149*peakData[(peakInd+QUEUE_SIZE-3)%QUEUE_SIZE];
+    tmp -= 0.056*peakData[(peakInd+QUEUE_SIZE-4)%QUEUE_SIZE];
+    tmp -= 0.031*peakData[(peakInd+QUEUE_SIZE-5)%QUEUE_SIZE];
 }
 
