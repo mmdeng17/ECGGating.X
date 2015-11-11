@@ -64,7 +64,7 @@ float getThresh(float *valData,unsigned int valInd) {
     tmp += 0.087*valData[(valInd+QUEUE_SIZE-3)%QUEUE_SIZE];
     tmp += 0.031*valData[(valInd+QUEUE_SIZE-4)%QUEUE_SIZE];
     tmp += 0.003*valData[(valInd+QUEUE_SIZE-5)%QUEUE_SIZE];
-    return 0.75*tmp;
+    return .65*tmp;
 }
 
 // Function to calculate heart rate interval based on last 5 peaks
